@@ -1,16 +1,15 @@
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 public class SpawnObject : MonoBehaviour
 {
-    public List<GameObject> objects = [];
+    public GameObject[] objects = { };
     // Start is called before the first frame update
     void Start()
     {
-        if (objects.Any())
+        if (objects!.Any())
         {
-            Instantiate(objects[0]);
+            Instantiate(objects[0], transform.position, Quaternion.identity);
         }        
     }
 
