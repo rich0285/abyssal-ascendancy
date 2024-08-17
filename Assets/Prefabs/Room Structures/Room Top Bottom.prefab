@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7330135975123599940}
+  - component: {fileID: -8695259028402789559}
   m_Layer: 0
   m_Name: Room Top Bottom
   m_TagString: Untagged
@@ -71,6 +72,34 @@ Transform:
   - {fileID: 1223059854387323428}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &-8695259028402789559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8842604586630983219}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1fc07b02011dc94597b8f56dd2a8a1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UpNeighbours:
+  - {fileID: 7616546536581630489, guid: da629dbc501d88a4e9ee2350617d23f7, type: 3}
+  - {fileID: 7782096669087955342, guid: 98229f914df8248498a54d4988e14545, type: 3}
+  - {fileID: 4334599784423630588, guid: 79c238a975b495641b494194a06d921b, type: 3}
+  - {fileID: -9107440579375042826, guid: b04d32436bb70b44da56ebf5aa50f30f, type: 3}
+  - {fileID: 4497014476050680893, guid: 879df8dbee427834cba178354954a447, type: 3}
+  - {fileID: -8695259028402789559}
+  DownNeighbours:
+  - {fileID: -9107440579375042826, guid: b04d32436bb70b44da56ebf5aa50f30f, type: 3}
+  - {fileID: 4497014476050680893, guid: 879df8dbee427834cba178354954a447, type: 3}
+  - {fileID: -8695259028402789559}
+  - {fileID: -2876863135791355181, guid: ec733f0ef0baaee4d802797eb582949f, type: 3}
+  - {fileID: 4480082200633760895, guid: d878a33cab5a83143bdabd01b4ae1074, type: 3}
+  - {fileID: 7746514020702415870, guid: 0ae40b625a1fd1f4dab20227d84226d6, type: 3}
+  LeftNeighbours: []
+  RightNeighbours: []
 --- !u!1001 &158104874085552621
 PrefabInstance:
   m_ObjectHideFlags: 0
