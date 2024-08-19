@@ -112,7 +112,7 @@ MonoBehaviour:
   connectsUp: 1
   connectsDown: 1
   connectsLeft: 1
-  connectsRight: 0
+  connectsRight: 1
 --- !u!1001 &271260550638346253
 PrefabInstance:
   m_ObjectHideFlags: 0

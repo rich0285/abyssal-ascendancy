@@ -4,9 +4,15 @@ using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
+    public TileType tileType; // e.g., "Room", "Corridor", etc.
+    public bool connectsUp;
+    public bool connectsDown;
+    public bool connectsLeft;
+    public bool connectsRight;
+}
 
-    public Tile[] UpNeighbours;
-    public Tile[] DownNeighbours;
-    public Tile[] LeftNeighbours;
-    public Tile[] RightNeighbours;
+public enum TileType
+{
+    Room,
+    Corridor,
 }

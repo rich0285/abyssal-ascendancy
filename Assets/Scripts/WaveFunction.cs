@@ -1,164 +1,249 @@
 using System;
-using System.Collections;
+using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
+using JetBrains.Annotations;
+using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
-public class WaveFunction : MonoBehaviour
+public class MapGenerator : MonoBehaviour
 {
-    public int dimensions;
-    public Tile[] tileObjects;
-    public List<Cell> gridComponents = new List<Cell>();
-    public Cell cellObj;
+    public int maxRandomWalkMoves = 100; // Define the size of your map grid
 
-    int iterations = 0;
+    private readonly List<GameObject> _tilePrefabs = new List<GameObject>();
+
+    [NotNull] private readonly Dictionary<string, List<GameObject>> _sortedTiles = new Dictionary<string, List<GameObject>>()
+    {
+        { "up", new List<GameObject>() },
+        { "down", new List<GameObject>() },
+        { "left", new List<GameObject>() },
+        { "right", new List<GameObject>() }
+    };
+
+    Dictionary<Vector2Int, GameObject> placedTiles = new Dictionary<Vector2Int, GameObject>();
 
     void Awake()
     {
-        // gridComponents = new List<Cell>();
-        InitializeGrid();
+        LoadTiles();
+        GenerateMapWithRandomWalk(maxRandomWalkMoves);
     }
 
-    void InitializeGrid()
+    void LoadTiles()
     {
-        for (int y = 0; y < dimensions; y++)
+        // Load all prefabs from the Room Structures folder
+        GameObject[] loadedTilePrefabs = Resources.LoadAll<GameObject>("Prefabs/Corridor");
+
+        // Add loaded prefabs to the list
+        _tilePrefabs!.AddRange(loadedTilePrefabs);
+        // Sort Tiles
+        SortTilePrefabs(loadedTilePrefabs);
+
+        Debug.Log($"Loaded {_tilePrefabs.Count} tile prefabs.");
+    }
+
+
+    void GenerateMapWithRandomWalk(int maxMoves)
+    {
+        RandomWalk(maxMoves);
+    }
+
+
+    private void SortTilePrefabs(GameObject[] loadedTilePrefabs)
+    {
+        foreach (GameObject tilePrefab in loadedTilePrefabs)
         {
-            for (int x = 0; x < dimensions; x++)
+            var tileScript = tilePrefab.GetComponent<Tile>();
+            if (tileScript == null)
             {
-                Cell newCell = Instantiate(cellObj, new Vector2(x * 10, y * 10), Quaternion.identity);
-                newCell!.CreateCell(false, tileObjects);
-                gridComponents!.Add(newCell);
+                Debug.LogError("Something is wrong since the Prefab here doesn't have the Tile component");
+                continue; // Skip this prefab since it doesn't have a Tile component
             }
+
+            // Add the tilePrefab to the corresponding list based on the connection
+            if (tileScript.connectsUp)
+                _sortedTiles["up"].Add(tilePrefab);
+        
+            if (tileScript.connectsDown)
+                _sortedTiles["down"].Add(tilePrefab);
+        
+            if (tileScript.connectsLeft)
+                _sortedTiles["left"].Add(tilePrefab);
+        
+            if (tileScript.connectsRight)
+                _sortedTiles["right"].Add(tilePrefab);
+        }
+    }
+    
+
+    void EnsureConnectivity(Dictionary<Vector2Int, GameObject> placedTiles)
+    {
+        HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+        Queue<Vector2Int> queue = new Queue<Vector2Int>();
+
+        // Start flood fill from the first placed tile
+        if (placedTiles.Count > 0)
+        {
+            Vector2Int start = placedTiles.Keys.First();
+            queue.Enqueue(start);
+            visited.Add(start);
         }
 
-        StartCoroutine(CheckEntropy());
-    }
-
-
-    IEnumerator CheckEntropy()
-    {
-        List<Cell> tempGrid = new List<Cell>(gridComponents!);
-
-        tempGrid.RemoveAll(c => c.collapsed);
-
-        tempGrid.Sort((a, b) => { return a.tileOptions.Length - b.tileOptions.Length; });
-
-        int arrLength = tempGrid[0].tileOptions.Length;
-        int stopIndex = default;
-
-        for (int i = 1; i < tempGrid.Count; i++)
+        while (queue.Count > 0)
         {
-            if (tempGrid[i].tileOptions.Length > arrLength)
+            Vector2Int current = queue.Dequeue();
+
+            foreach (Vector2Int dir in new Vector2Int[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
             {
-                stopIndex = i;
-                break;
-            }
-        }
+                Vector2Int neighbor = current + dir;
 
-        if (stopIndex > 0)
-        {
-            tempGrid.RemoveRange(stopIndex, tempGrid.Count - stopIndex);
-        }
-
-        yield return new WaitForSeconds(.01f);
-
-        CollapseCell(tempGrid);
-    }
-
-    void CollapseCell(List<Cell> tempGrid)
-    {
-        Debug.Log(tempGrid.Count);
-        Debug.Log(tempGrid);
-        
-        
-        int randIndex = UnityEngine.Random.Range(0, tempGrid.Count);
-
-        Cell cellToCollapse = tempGrid[randIndex];
-
-        cellToCollapse.collapsed = true;
-        
-        if (cellToCollapse.tileOptions.Length == 0)
-        {
-            Debug.LogError("Error: No tile options available for cell collapse.");
-            return; // Or handle the situation appropriately
-        }
-
-        Tile selectedTile = cellToCollapse.tileOptions[UnityEngine.Random.Range(0, cellToCollapse.tileOptions.Length)];
-        
-        cellToCollapse.tileOptions = new Tile[] { selectedTile };
-
-        Tile foundTile = cellToCollapse.tileOptions[0];
-        Instantiate(foundTile, cellToCollapse.transform.position, Quaternion.identity);
-
-        UpdateGeneration();
-    }
-
-    void UpdateGeneration()
-    {
-        List<Cell> newGenerationCell = new List<Cell>(gridComponents);
-
-        for (int y = 0; y < dimensions; y++)
-        {
-            for (int x = 0; x < dimensions; x++)
-            {
-                var index = x + y * dimensions;
-                Cell currentCell = gridComponents[index];
-
-                if (currentCell.collapsed)
+                if (placedTiles.ContainsKey(neighbor) && !visited.Contains(neighbor))
                 {
-                    Debug.Log("Cell already collapsed at index: " + index);
-                    newGenerationCell[index] = currentCell;
-                    continue;
+                    visited.Add(neighbor);
+                    queue.Enqueue(neighbor);
                 }
-
-                List<Tile> options = new List<Tile>(tileObjects);
-
-                // Checking neighbors and adjusting options accordingly
-                if (y > 0) UpdateOptions(options, gridComponents[x + (y - 1) * dimensions], cell => cell.UpNeighbours);
-                if (x < dimensions - 1) UpdateOptions(options, gridComponents[x + 1 + y * dimensions], cell => cell.LeftNeighbours);
-                if (y < dimensions - 1) UpdateOptions(options, gridComponents[x + (y + 1) * dimensions], cell => cell.DownNeighbours);
-                if (x > 0) UpdateOptions(options, gridComponents[x - 1 + y * dimensions], cell => cell.RightNeighbours);
-
-                if (options.Count == 0)
-                {
-                    Debug.LogError("No valid options found for cell at index: " + index);
-                    // Handle the error case
-                    continue;
-                }
-
-                newGenerationCell[index].RecreateCell(options.ToArray());
             }
         }
 
-        gridComponents = newGenerationCell;
-        iterations++;
-
-        if(iterations < dimensions * dimensions)
-        {
-            StartCoroutine(CheckEntropy());
-        }
+        // At this point, 'visited' contains all connected tiles
+        // You can check if there are any unvisited tiles in 'placedTiles' to identify disconnected parts
     }
 
-    void UpdateOptions(List<Tile> options, Cell neighbor, Func<Tile, Tile[]> getValidNeighbors)
-    {
-        List<Tile> validOptions = new List<Tile>();
-        foreach (Tile neighborTile in neighbor.tileOptions)
-        {
-            var valid = getValidNeighbors(neighborTile);
-            validOptions.AddRange(valid);
-        }
-        CheckValidity(options, validOptions);
-    }
 
-    void CheckValidity(List<Tile> optionList, List<Tile> validOption)
+    void RandomWalk(int maxMoves)
     {
-        for (int x = optionList.Count - 1; x >= 0; x--)
+        HashSet<Vector2Int> visitedPositions = new HashSet<Vector2Int>();
+        List<Vector2Int> walkPath = new List<Vector2Int>();
+        Vector2Int currentPos = new Vector2Int(0, 0); // Starting position
+        walkPath.Add(currentPos);
+        visitedPositions.Add(currentPos);
+
+        if (!placedTiles.Any())
         {
-            var element = optionList[x];
-            if (!validOption.Contains(element))
+            // Place the first Tile
+            GameObject firstTile = GetRandomCompatibleTile(true, true, true, true);
+            if (firstTile != null)
             {
-                optionList.RemoveAt(x);
+                placedTiles[currentPos] = Instantiate(firstTile, new Vector3(currentPos.x * 10, 0, currentPos.y * 10), Quaternion.identity);
+            }
+            else
+            {
+                Debug.LogError("No initial tile could be placed. Check your tile prefabs.");
+                return;
             }
         }
+
+        // GameObject currentTile = placedTiles[currentPos];
+        //
+        // for (int i = 0; i < maxMoves; i++)
+        // {
+        //     Tile currentTileScript = currentTile.GetComponent<Tile>();
+        //
+        //     List<Vector2Int> possibleDirections = new List<Vector2Int>();
+        //
+        //     if (currentTileScript.connectsUp && !visitedPositions.Contains(currentPos + Vector2Int.up)) possibleDirections.Add(Vector2Int.up);
+        //     if (currentTileScript.connectsDown && !visitedPositions.Contains(currentPos + Vector2Int.down)) possibleDirections.Add(Vector2Int.down);
+        //     if (currentTileScript.connectsLeft && !visitedPositions.Contains(currentPos + Vector2Int.left)) possibleDirections.Add(Vector2Int.left);
+        //     if (currentTileScript.connectsRight && !visitedPositions.Contains(currentPos + Vector2Int.right)) possibleDirections.Add(Vector2Int.right);
+        //
+        //     if (possibleDirections.Count == 0)
+        //     {
+        //         Debug.LogWarning("No possible directions to walk to from current tile.");
+        //         break; // No valid moves
+        //     }
+        //
+        //     // Choose a random direction from the available ones
+        //     Vector2Int chosenDirection = possibleDirections[Random.Range(0, possibleDirections.Count)];
+        //     currentPos += chosenDirection;
+        //
+        //     GameObject nextTile = GetRandomCompatibleTile(
+        //         chosenDirection == Vector2Int.down,
+        //         chosenDirection == Vector2Int.up,
+        //         chosenDirection == Vector2Int.right,
+        //         chosenDirection == Vector2Int.left
+        //     );
+        //
+        //     if (nextTile != null)
+        //     {
+        //         placedTiles[currentPos] = Instantiate(nextTile, new Vector3(currentPos.x * 10, 0, currentPos.y * 10), Quaternion.identity);
+        //         walkPath.Add(currentPos);
+        //         visitedPositions.Add(currentPos); // Mark this position as visited
+        //         currentTile = nextTile; // Update the current tile to the newly placed tile
+        //     }
+        //     else
+        //     {
+        //         Debug.LogWarning("Could not place a compatible tile.");
+        //         break;
+        //     }
+        // }
+
+        // Ensure the path has no open ends
+        CloseOpenEnds();
+    }
+
+    void CloseOpenEnds()
+    {
+        foreach (var tile in placedTiles)
+        {
+            Vector2Int pos = tile.Key;
+            Tile tileScript = tile.Value.GetComponent<Tile>();
+
+            // Close off connections that are not matched by neighboring tiles
+            if (tileScript.connectsUp && !placedTiles.ContainsKey(pos + Vector2Int.up))
+            {
+                tileScript.connectsUp = false;
+            }
+
+            if (tileScript.connectsDown && !placedTiles.ContainsKey(pos + Vector2Int.down))
+            {
+                tileScript.connectsDown = false;
+            }
+
+            if (tileScript.connectsLeft && !placedTiles.ContainsKey(pos + Vector2Int.left))
+            {
+                tileScript.connectsLeft = false;
+            }
+
+            if (tileScript.connectsRight && !placedTiles.ContainsKey(pos + Vector2Int.right))
+            {
+                tileScript.connectsRight = false;
+            }
+
+            // Optionally update the tile's appearance here to visually represent the closed ends
+        }
+    }
+
+    GameObject GetRandomCompatibleTile(bool up, bool down, bool left, bool right)
+    {
+        List<GameObject> compatibleTiles = new List<GameObject>();
+
+        // Check for each direction and add compatible tiles to the list
+        if (up && _sortedTiles.ContainsKey("up"))
+        {
+            compatibleTiles.AddRange(_sortedTiles["up"]);
+        }
+
+        if (down && _sortedTiles.ContainsKey("down"))
+        {
+            compatibleTiles.AddRange(_sortedTiles["down"]);
+        }
+
+        if (left && _sortedTiles.ContainsKey("left"))
+        {
+            compatibleTiles.AddRange(_sortedTiles["left"]);
+        }
+
+        if (right && _sortedTiles.ContainsKey("right"))
+        {
+            compatibleTiles.AddRange(_sortedTiles["right"]);
+        }
+
+        if (compatibleTiles.Count > 0)
+        {
+            Debug.Log($"Found {compatibleTiles.Count} compatible tiles.");
+            return compatibleTiles[Random.Range(0, compatibleTiles.Count)];
+        }
+
+        Debug.LogError("No compatible tiles found.");
+        return null;
     }
 }
