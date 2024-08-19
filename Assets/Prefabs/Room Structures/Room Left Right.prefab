@@ -98,6 +98,7 @@ MonoBehaviour:
   - {fileID: 4480082200633760895, guid: d878a33cab5a83143bdabd01b4ae1074, type: 3}
   - {fileID: 7746514020702415870, guid: 0ae40b625a1fd1f4dab20227d84226d6, type: 3}
   - {fileID: 2020188517150739131}
+  - {fileID: -4860473665641538074, guid: adb67c6a8849d4a4cb382977898c9ddb, type: 3}
   RightNeighbours:
   - {fileID: 7616546536581630489, guid: da629dbc501d88a4e9ee2350617d23f7, type: 3}
   - {fileID: 7782096669087955342, guid: 98229f914df8248498a54d4988e14545, type: 3}
@@ -105,6 +106,7 @@ MonoBehaviour:
   - {fileID: -2876863135791355181, guid: ec733f0ef0baaee4d802797eb582949f, type: 3}
   - {fileID: 4480082200633760895, guid: d878a33cab5a83143bdabd01b4ae1074, type: 3}
   - {fileID: 2020188517150739131}
+  - {fileID: -4860473665641538074, guid: adb67c6a8849d4a4cb382977898c9ddb, type: 3}
 --- !u!1001 &71186999164729588
 PrefabInstance:
   m_ObjectHideFlags: 0

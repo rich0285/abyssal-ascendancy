@@ -268,8 +268,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6414259451579013155, guid: 62bb1423e8499cc4c944ed77b6d0a1ee, type: 3}
       propertyPath: dimensions
-      value: 10
+      value: 30
       objectReference: {fileID: 0}
+    - target: {fileID: 6414259451579013155, guid: 62bb1423e8499cc4c944ed77b6d0a1ee, type: 3}
+      propertyPath: tileObjects.Array.size
+      value: 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 6414259451579013155, guid: 62bb1423e8499cc4c944ed77b6d0a1ee, type: 3}
+      propertyPath: tileObjects.Array.data[10]
+      value: 
+      objectReference: {fileID: -4860473665641538074, guid: adb67c6a8849d4a4cb382977898c9ddb, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
