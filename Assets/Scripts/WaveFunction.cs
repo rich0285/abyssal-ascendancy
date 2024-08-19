@@ -73,41 +73,6 @@ public class MapGenerator : MonoBehaviour
                 _sortedTiles["right"].Add(tilePrefab);
         }
     }
-    
-
-    void EnsureConnectivity(Dictionary<Vector2Int, GameObject> placedTiles)
-    {
-        HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
-        Queue<Vector2Int> queue = new Queue<Vector2Int>();
-
-        // Start flood fill from the first placed tile
-        if (placedTiles.Count > 0)
-        {
-            Vector2Int start = placedTiles.Keys.First();
-            queue.Enqueue(start);
-            visited.Add(start);
-        }
-
-        while (queue.Count > 0)
-        {
-            Vector2Int current = queue.Dequeue();
-
-            foreach (Vector2Int dir in new Vector2Int[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
-            {
-                Vector2Int neighbor = current + dir;
-
-                if (placedTiles.ContainsKey(neighbor) && !visited.Contains(neighbor))
-                {
-                    visited.Add(neighbor);
-                    queue.Enqueue(neighbor);
-                }
-            }
-        }
-
-        // At this point, 'visited' contains all connected tiles
-        // You can check if there are any unvisited tiles in 'placedTiles' to identify disconnected parts
-    }
-
 
     void RandomWalk(int maxMoves)
     {
@@ -120,7 +85,9 @@ public class MapGenerator : MonoBehaviour
         if (!placedTiles.Any())
         {
             // Place the first Tile
-            GameObject firstTile = GetRandomCompatibleTile(true, true, true, true);
+            // i want this only checking on one side of the tile that the random moves uses do i dont place a incomptable tile
+            GameObject firstTile = GetRandomCompatibleTile(TileDirectionOptions.Up);
+            
             if (firstTile != null)
             {
                 placedTiles[currentPos] = Instantiate(firstTile, new Vector3(currentPos.x * 10, 0, currentPos.y * 10), Quaternion.identity);
@@ -132,51 +99,6 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
-        // GameObject currentTile = placedTiles[currentPos];
-        //
-        // for (int i = 0; i < maxMoves; i++)
-        // {
-        //     Tile currentTileScript = currentTile.GetComponent<Tile>();
-        //
-        //     List<Vector2Int> possibleDirections = new List<Vector2Int>();
-        //
-        //     if (currentTileScript.connectsUp && !visitedPositions.Contains(currentPos + Vector2Int.up)) possibleDirections.Add(Vector2Int.up);
-        //     if (currentTileScript.connectsDown && !visitedPositions.Contains(currentPos + Vector2Int.down)) possibleDirections.Add(Vector2Int.down);
-        //     if (currentTileScript.connectsLeft && !visitedPositions.Contains(currentPos + Vector2Int.left)) possibleDirections.Add(Vector2Int.left);
-        //     if (currentTileScript.connectsRight && !visitedPositions.Contains(currentPos + Vector2Int.right)) possibleDirections.Add(Vector2Int.right);
-        //
-        //     if (possibleDirections.Count == 0)
-        //     {
-        //         Debug.LogWarning("No possible directions to walk to from current tile.");
-        //         break; // No valid moves
-        //     }
-        //
-        //     // Choose a random direction from the available ones
-        //     Vector2Int chosenDirection = possibleDirections[Random.Range(0, possibleDirections.Count)];
-        //     currentPos += chosenDirection;
-        //
-        //     GameObject nextTile = GetRandomCompatibleTile(
-        //         chosenDirection == Vector2Int.down,
-        //         chosenDirection == Vector2Int.up,
-        //         chosenDirection == Vector2Int.right,
-        //         chosenDirection == Vector2Int.left
-        //     );
-        //
-        //     if (nextTile != null)
-        //     {
-        //         placedTiles[currentPos] = Instantiate(nextTile, new Vector3(currentPos.x * 10, 0, currentPos.y * 10), Quaternion.identity);
-        //         walkPath.Add(currentPos);
-        //         visitedPositions.Add(currentPos); // Mark this position as visited
-        //         currentTile = nextTile; // Update the current tile to the newly placed tile
-        //     }
-        //     else
-        //     {
-        //         Debug.LogWarning("Could not place a compatible tile.");
-        //         break;
-        //     }
-        // }
-
-        // Ensure the path has no open ends
         CloseOpenEnds();
     }
 
@@ -212,27 +134,27 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
-    GameObject GetRandomCompatibleTile(bool up, bool down, bool left, bool right)
+    GameObject GetRandomCompatibleTile(TileDirectionOptions connection)
     {
         List<GameObject> compatibleTiles = new List<GameObject>();
 
         // Check for each direction and add compatible tiles to the list
-        if (up && _sortedTiles.ContainsKey("up"))
+        if (connection == TileDirectionOptions.Up )
         {
             compatibleTiles.AddRange(_sortedTiles["up"]);
         }
 
-        if (down && _sortedTiles.ContainsKey("down"))
+        if (connection == TileDirectionOptions.Down)
         {
             compatibleTiles.AddRange(_sortedTiles["down"]);
         }
 
-        if (left && _sortedTiles.ContainsKey("left"))
+        if (connection == TileDirectionOptions.Left)
         {
             compatibleTiles.AddRange(_sortedTiles["left"]);
         }
 
-        if (right && _sortedTiles.ContainsKey("right"))
+        if (connection == TileDirectionOptions.Right)
         {
             compatibleTiles.AddRange(_sortedTiles["right"]);
         }
@@ -246,4 +168,12 @@ public class MapGenerator : MonoBehaviour
         Debug.LogError("No compatible tiles found.");
         return null;
     }
+}
+
+public enum TileDirectionOptions
+{
+    Up,
+    Down,
+    Left,
+    Right
 }
